@@ -4,9 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/server.js",
     "build": "tsc",
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "seed": "tsx src/lib/seed.ts",
+    "resource-seed": "tsx src/lib/resource-seed.ts",
+    "quiz-seed": "tsx src/lib/quiz-seed"
   },
   "nodemonConfig": {
     "ignore": [
@@ -17,20 +20,31 @@
       "src"
     ],
     "ext": "ts,js,json",
-    "exec": "ts-node ./src/index.ts"
+    "exec": "ts-node ./src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
-    "@types/node": "^26.4.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.6.2",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "@prisma/client": "^6.2.1",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.6.0",
+    "jsonwebtoken": "^9.0.3",
+    "node": "^26.9.0",
+    "prisma": "^6.2.1",
+    "tsx": "^4.23.13"
   }
 }
