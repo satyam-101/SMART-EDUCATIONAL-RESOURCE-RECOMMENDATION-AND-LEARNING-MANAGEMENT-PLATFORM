@@ -1,111 +1,214 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/*
+  ZUNO theming.
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
+  The neutral palette (zinc / zuno / white / black utilities) is driven by CSS
+  custom properties. `:root` holds the LIGHT theme; `.dark` on <html> flips the
+  tokens. Components keep using the same utility classes — they just resolve to
+  different colors per theme. Accent hue tints that were chosen for the dark
+  palette get explicit light-mode overrides for contrast.
+*/
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --zinc-50: 229 231 236;
+    --zinc-100: 23 26 34;
+    --zinc-200: 36 40 51;
+    --zinc-300: 63 68 83;
+    --zinc-400: 103 110 128;
+    --zinc-500: 139 147 165;
+    --zinc-600: 205 210 221;
+    --zinc-700: 227 230 238;
+    --zinc-800: 238 240 245;
+    --zinc-900: 251 251 253;
+    --zinc-950: 255 255 255;
+
+    --zuno-950: 245 245 250;
+    --zuno-900: 255 255 255;
+    --zuno-800: 238 240 247;
+    --zuno-700: 226 229 240;
+
+    --ui-white: 23 26 34;
+    --ui-black: 255 255 255;
+
+    --shadow-card: 0 10px 34px -14px rgba(15, 23, 42, 0.14);
+    --scrim: rgba(24, 28, 46, 0.28);
+    --border-default: rgba(18, 22, 38, 0.14);
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .dark {
+    --zinc-50: 250 250 250;
+    --zinc-100: 244 244 245;
+    --zinc-200: 228 228 231;
+    --zinc-300: 212 212 216;
+    --zinc-400: 161 161 170;
+    --zinc-500: 113 113 122;
+    --zinc-600: 82 82 91;
+    --zinc-700: 63 63 70;
+    --zinc-800: 39 39 42;
+    --zinc-900: 24 24 27;
+    --zinc-950: 9 9 11;
+
+    --zuno-950: 8 10 22;
+    --zuno-900: 13 16 32;
+    --zuno-800: 17 21 42;
+    --zuno-700: 21 26 50;
+
+    --ui-white: 255 255 255;
+    --ui-black: 0 0 0;
+
+    --shadow-card: 0 8px 30px -12px rgba(0, 0, 0, 0.5);
+    --scrim: rgba(4, 6, 14, 0.6);
+    --border-default: rgba(255, 255, 255, 0.08);
+  }
+
+  html {
+    /* Smooth scrolling is owned by Lenis. A global `scroll-behavior: smooth`
+       would double-animate every programmatic scroll (anchors, route changes)
+       and fight the wheel handler — causing the janky, rubber-banded feel.
+       Lenis restores smooth programmatic scrolls itself when active. */
+    scroll-behavior: auto;
+  }
+
+  /* Required Lenis state classes. */
+  .lenis,
+  .lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  * {
+    border-color: var(--border-default);
+  }
+
+  body {
+    @apply min-w-[320px] bg-zuno-950 font-sans text-zinc-200 antialiased;
+    color: var(--zinc-200);
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  ::selection {
+    background: rgba(139, 92, 246, 0.35);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(113, 113, 122, 0.45);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgba(17, 21, 42, 1);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.55);
+    background-clip: content-box;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply outline-none;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
+@layer components {
+  .glass {
+    @apply border border-white/[0.08] bg-white/[0.045] backdrop-blur-xl;
+  }
 
-body {
-  margin: 0;
-}
+  .transfer {
+    @apply transition-all duration-300;
+  }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
+  /* Accent text is a single flat violet — no gradient, no glow. */
+  .text-gradient {
+    @apply text-violet-300;
+  }
+  html:not(.dark) .text-gradient {
+    color: #6d28d9;
+  }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  /* Kept for markup compatibility; now a flat accent colour. */
+  .text-gradient-animated {
+    @apply text-violet-300;
+  }
+  html:not(.dark) .text-gradient-animated {
+    color: #6d28d9;
+  }
+
+  .ring-highlight {
+    @apply ring-1 ring-white/[0.06];
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-white/[0.08] bg-zinc-900/60 shadow-card backdrop-blur-sm;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-violet-300;
+  }
+
+  .backdrop-scrim {
+    background: var(--scrim);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+
+/* Light-mode accent text: the dark scoped tints are too pale for light bg. */
+html:not(.dark) .text-violet-100 { color: #6d28d9; }
+html:not(.dark) .text-violet-200 { color: #6d28d9; }
+html:not(.dark) .text-violet-300 { color: #6d28d9; }
+html:not(.dark) .text-fuchsia-300 { color: #a21caf; }
+html:not(.dark) .text-emerald-300 { color: #059669; }
+html:not(.dark) .text-sky-300 { color: #0369a1; }
+html:not(.dark) .text-cyan-300 { color: #0e7490; }
+html:not(.dark) .text-amber-300 { color: #b45309; }
+html:not(.dark) .text-red-300 { color: #dc2626; }
+
+/*
+  Keep true white text on solid accent surfaces in light mode. `.ui-white-text`
+  is the explicit marker; the same works for the brand solid accent utilities.
+*/
+html:not(.dark) .ui-white-text,
+html:not(.dark) :is(.bg-violet-600, .bg-violet-500, .bg-violet-700, .bg-fuchsia-600, .bg-fuchsia-500, .bg-emerald-600, .bg-emerald-500, .bg-sky-600, .bg-indigo-600).text-white {
+  color: #ffffff !important;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+/*
+  Containers marked `.on-accent` sit on vivid brand surfaces; restore their
+  white-alpha text / translucent surfaces that otherwise flip to dark.
+*/
+html:not(.dark) .on-accent .text-white { color: #fff !important; }
+html:not(.dark) .on-accent .text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+html:not(.dark) .on-accent .text-white\/85 { color: rgba(255, 255, 255, 0.85) !important; }
+html:not(.dark) .on-accent .text-white\/40 { color: rgba(255, 255, 255, 0.4) !important; }
+html:not(.dark) .on-accent .bg-white\/10 { background-color: rgba(255, 255, 255, 0.1) !important; }
+html:not(.dark) .on-accent .bg-white\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
+html:not(.dark) .on-accent .bg-white { background-color: #fff !important; }
+html:not(.dark) .on-accent .border-white\/30 { border-color: rgba(255, 255, 255, 0.3) !important; }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* Violet-tinted chips stay readable in light mode. */
+html:not(.dark) .surface-card {
+  border-color: rgba(20, 24, 40, 0.08);
 }
