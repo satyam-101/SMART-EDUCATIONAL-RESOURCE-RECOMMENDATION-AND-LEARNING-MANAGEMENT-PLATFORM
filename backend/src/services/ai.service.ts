@@ -4,6 +4,23 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
+function parseJsonResponse(content: string) {
+  try {
+    return JSON.parse(content);
+  } catch {
+    const jsonStart = content.indexOf("{");
+    const jsonEnd = content.lastIndexOf("}");
+
+    if (jsonStart === -1 || jsonEnd === -1) {
+      throw new Error("Groq returned invalid JSON");
+    }
+
+    const jsonString = content.slice(jsonStart, jsonEnd + 1);
+
+    return JSON.parse(jsonString);
+  }
+}
+
 export async function recommendCourses(
   learningGoal: string,
   skillLevel: string,
@@ -46,7 +63,10 @@ Do not recommend courses that are not in the available course list.
         content: prompt
       }
     ],
-    temperature: 0.2
+    temperature: 0.2,
+    response_format: {
+    type: "json_object"
+  }
   });
 
   const content = response.choices[0]?.message?.content;
@@ -55,7 +75,7 @@ Do not recommend courses that are not in the available course list.
     throw new Error("No response from Groq");
   }
 
-  return JSON.parse(content);
+  return parseJsonResponse(content);
 }
 
 export async function recommendNextAction(
@@ -103,7 +123,10 @@ REVIEW, PRACTICE, RETAKE, NEXT_TOPIC
         content: prompt
       }
     ],
-    temperature: 0.2
+    temperature: 0.2,
+    response_format: {
+    type: "json_object"
+  }
   });
 
   const content = response.choices[0]?.message?.content;
@@ -112,5 +135,5 @@ REVIEW, PRACTICE, RETAKE, NEXT_TOPIC
     throw new Error("No response from Groq");
   }
 
-  return JSON.parse(content);
+  return parseJsonResponse(content);
 }
