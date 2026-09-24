@@ -25,20 +25,32 @@ export function SmoothScroll({ disabled = false, children }: SmoothScrollProps) 
     const finePointer = window.matchMedia('(pointer: fine)').matches;
     if (prefersReduced || !finePointer) return undefined;
 
-    const lenis = new Lenis({
+     let lenis: Lenis | null = new Lenis({
       lerp: 0.09,
       wheelMultiplier: 0.95,
       smoothWheel: true,
     });
 
-    lenis.on('scroll', ScrollTrigger.update);
-    const raf = (time: number) => lenis.raf(time * 1000);
+    const handleScroll = () => {
+      ScrollTrigger.update();
+    };
+
+    lenis.on('scroll', handleScroll);
+
+    const raf = (time: number) => {
+      if (lenis) {
+        lenis.raf(time * 1000);
+      }
+    };
+
     gsap.ticker.add(raf);
     gsap.ticker.lagSmoothing(500, 33);
 
     // Positions for scrubbed/pinned timelines are measured before webfonts
     // and images settle — recalc once everything is in so nothing "jumps".
-    const refreshOnLoad = () => ScrollTrigger.refresh();
+    const refreshOnLoad = () => {
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    };
     window.addEventListener('load', refreshOnLoad);
     const settle = requestAnimationFrame(() => ScrollTrigger.refresh());
 
@@ -46,8 +58,17 @@ export function SmoothScroll({ disabled = false, children }: SmoothScrollProps) 
       window.removeEventListener('load', refreshOnLoad);
       cancelAnimationFrame(settle);
       gsap.ticker.remove(raf);
-      lenis.destroy();
-      ScrollTrigger.refresh();
+
+      if (lenis) {
+        lenis.off('scroll', handleScroll);
+        const instance = lenis;
+        lenis = null;
+        instance.destroy();
+      }
+
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
     };
   }, [disabled, reduced]);
 
