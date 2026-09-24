@@ -11,6 +11,15 @@ router.get("/", async (req, res) => {
         topics: {
           orderBy: {
             order: "asc"
+          },
+          include: {
+            resources: true,
+            quiz: {
+              select: {
+                id: true,
+                title: true
+              }
+            }
           }
         }
       },
