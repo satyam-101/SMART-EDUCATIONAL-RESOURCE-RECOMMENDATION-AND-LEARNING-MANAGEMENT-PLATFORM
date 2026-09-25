@@ -5,20 +5,98 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  goal: string;
-  skillLevel: SkillLevel;
-  interests: string[];
-  initials: string;
-  streak: number;
-  xp: number;
-  rank: string;
-  joinedAt: string;
+  learningGoal?: string;
+  skillLevel?: string;
+  interests?: string | string[];
+  goal?: string;
+  initials?: string;
+  streak?: number;
+  xp?: number;
+  rank?: string;
+  joinedAt?: string;
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
 }
+
+// Backend API Types
+export interface ApiResource {
+  id: string;
+  title: string;
+  videoUrl: string;
+  description?: string | null;
+  topicId: string;
+}
+
+export interface ApiQuizQuestion {
+  id: string;
+  questionText: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+}
+
+export interface ApiQuiz {
+  id: string;
+  title: string;
+  topicId?: string;
+  questions?: ApiQuizQuestion[];
+}
+
+export interface ApiTopic {
+  id: string;
+  title: string;
+  order: number;
+  courseId: string;
+  resources?: ApiResource[];
+  quiz?: ApiQuiz | null;
+}
+
+export interface ApiCourse {
+  id: string;
+  title: string;
+  description: string;
+  topics?: ApiTopic[];
+}
+
+export interface CourseRecommendation {
+  courseId: string;
+  title: string;
+  courseTitle?: string;
+  description: string;
+  reason: string;
+}
+
+export interface QuizSubmitResponse {
+  message: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  attemptNumber: number;
+  attemptId: string;
+}
+
+export interface PerformanceRecommendation {
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  recommendation: {
+    action: 'REVIEW' | 'PRACTICE' | 'RETAKE' | 'NEXT_TOPIC';
+    message?: string;
+  };
+}
+
+export interface CourseProgressData {
+  courseId: string;
+  courseTitle: string;
+  totalTopics: number;
+  completedTopics: number;
+  percentage: number;
+}
+
 
 // ─── Courses ────────────────────────────────────────────────────
 export type LessonType = 'video' | 'reading' | 'quiz' | 'project';

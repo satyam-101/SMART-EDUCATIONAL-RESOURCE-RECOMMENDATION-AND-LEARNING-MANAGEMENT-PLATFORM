@@ -62,6 +62,7 @@ router.post("/", authenticate, async (req:AuthRequest, res) => {
 
         return {
           courseId: course!.id,
+          title: course!.title,
           courseTitle: course!.title,
           description: course!.description,
           reason: recommendation.reason

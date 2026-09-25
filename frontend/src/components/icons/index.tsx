@@ -54,5 +54,7 @@ export const SparklesIcon = createIcon('M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-
 export const BoltIcon = createIcon('M13 2L4 13h6l-1 9 9-11h-6l1-9z');
 export const RocketIcon = createIcon('M14 3c3 1 5 3 6 6-3 1-5 3-6 6-3-1-5-3-6-6 1-3 3-5 6-6zm-2 8l-4 4m4-4h4m-4 0v4');
 export const BookIcon = createIcon('M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v17H6.5A2.5 2.5 0 0 1 4 16.5v-12A2.5 2.5 0 0 1 6.5 2z');
+export const BookOpenIcon = BookIcon;
+export const RefreshCwIcon = createIcon('M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15');
 
 export * from './PrimitiveIcons';

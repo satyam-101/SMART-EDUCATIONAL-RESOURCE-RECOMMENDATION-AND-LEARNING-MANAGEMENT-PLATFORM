@@ -16,6 +16,9 @@ import { Careers } from './pages/Careers';
 import { CareerDetail } from './pages/CareerDetail';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Onboarding } from './pages/Onboarding';
+import { Recommendations } from './pages/Recommendations';
+import { TopicPage } from './pages/TopicPage';
 import { Dashboard } from './pages/Dashboard';
 import { Explore } from './pages/Explore';
 import { CourseDetail } from './pages/CourseDetail';
@@ -74,15 +77,19 @@ export function App() {
       <Route element={<Protected />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/courses" element={<Explore />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/topics/:topicId" element={<TopicPage />} />
           <Route path="/courses/:id/lesson/:lessonId" element={<LessonPlayer />} />
           <Route path="/ai-tutor" element={<AITutor />} />
           <Route path="/study-planner" element={<StudyPlanner />} />
           <Route path="/planner" element={<StudyPlanner />} />
           <Route path="/quiz/:id" element={<QuizPage />} />
           <Route path="/quiz" element={<QuizPage />} />
+          <Route path="/quiz-result/:attemptId" element={<QuizResult />} />
           <Route path="/quiz/:id/result" element={<QuizResult />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/practice" element={<Practice />} />

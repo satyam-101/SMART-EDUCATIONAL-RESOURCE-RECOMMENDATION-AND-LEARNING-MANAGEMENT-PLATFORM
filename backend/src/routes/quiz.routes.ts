@@ -68,16 +68,21 @@ router.post("/:quizId/submit", authenticate, async (req: AuthRequest, res) => {
     }
 
     let score = 0;
+    const optionLetters = ["A", "B", "C", "D"];
 
     for (const question of questions) {
-      if (answers[question.id] === question.correctAnswer) {
-        score++;
+      const rawAns = answers[question.id];
+      if (rawAns !== undefined && rawAns !== null) {
+        const formattedAns = typeof rawAns === "number" ? optionLetters[rawAns] : String(rawAns).trim().toUpperCase();
+        if (formattedAns === question.correctAnswer.trim().toUpperCase()) {
+          score++;
+        }
       }
     }
 
     const totalQuestions = questions.length;
 
-    const percentage = (score / totalQuestions) * 100;
+    const percentage = Math.round((score / totalQuestions) * 100);
 
     const previousAttempts = await prisma.quizAttempt.count({
       where: {
@@ -129,6 +134,11 @@ router.post("/:quizId/submit", authenticate, async (req: AuthRequest, res) => {
 
     res.json({
       message: "Quiz submitted successfully",
+      score,
+      totalQuestions,
+      percentage,
+      attemptNumber,
+      attemptId: attempt.id,
       result: {
         score,
         totalQuestions,

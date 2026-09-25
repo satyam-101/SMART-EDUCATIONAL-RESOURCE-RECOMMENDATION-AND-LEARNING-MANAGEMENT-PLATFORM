@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '../api';
+import { api, getToken, removeToken } from '../api';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { type User } from '../types';
 
@@ -7,8 +7,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: { name: string; email: string; password: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (userData: { name: string; email: string; password: string }) => Promise<User>;
+  saveOnboarding: (data: { learningGoal: string; skillLevel: string; interests: string }) => Promise<User>;
   logout: () => void;
   updateUser: (patch: Partial<User>) => void;
 }
@@ -20,21 +21,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
+    const initAuth = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const dash = await api.getDashboard();
+          if (dash && dash.user) {
+            setUser(dash.user);
+          }
+        } catch (err) {
+          console.warn('Session expired or server unavailable', err);
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { user: u } = await api.login(email, password);
-    setUser(u);
+  const login = async (email: string, password: string): Promise<User> => {
+    const res = await api.login(email, password);
+    setUser(res.user);
+    return res.user;
   };
 
-  const register = async (userData: { name: string; email: string; password: string }) => {
-    const { user: u } = await api.register(userData);
-    setUser(u);
+  const register = async (userData: { name: string; email: string; password: string }): Promise<User> => {
+    const res = await api.register(userData);
+    setUser(res.user);
+    return res.user;
   };
 
-  const logout = () => setUser(null);
+  const saveOnboarding = async (data: { learningGoal: string; skillLevel: string; interests: string }): Promise<User> => {
+    const res = await api.updateOnboarding(data);
+    const updatedUser = { ...user, ...res.user };
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const logout = () => {
+    removeToken();
+    setUser(null);
+  };
 
   const updateUser = (patch: Partial<User>) => {
     setUser((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -42,7 +69,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: !!user, login, register, logout, updateUser }}
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user && !!getToken(),
+        login,
+        register,
+        saveOnboarding,
+        logout,
+        updateUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

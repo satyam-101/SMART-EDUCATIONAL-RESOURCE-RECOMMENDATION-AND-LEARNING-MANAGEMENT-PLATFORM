@@ -15,8 +15,12 @@ export function Login() {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password);
-      nav('/dashboard');
+      const u = await login(email, password);
+      if (!u?.learningGoal) {
+        nav('/onboarding');
+      } else {
+        nav('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
