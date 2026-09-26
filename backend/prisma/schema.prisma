@@ -28,6 +28,8 @@ model Course {
   title       String
   description String
   topics      Topic[]
+  level       String    @default("Beginner")
+  goals       String[]  @default([])
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
