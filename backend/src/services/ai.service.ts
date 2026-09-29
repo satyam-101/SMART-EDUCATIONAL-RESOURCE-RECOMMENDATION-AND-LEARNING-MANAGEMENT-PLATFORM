@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import { searchRelevantCourses } from "./courseRecommendation.service";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || "dummy_key"
@@ -27,93 +28,92 @@ export async function recommendCourses(
   interests: string
 ) {
   try {
+    // 1. Get semantically relevant courses from Pinecone
+    const relevantCourses = await searchRelevantCourses(
+      learningGoal,
+      skillLevel
+    );
+
+    // 2. No suitable courses found
+    if (relevantCourses.length === 0) {
+      return {
+        recommendations: [],
+        message: "No suitable courses found for this learning goal.",
+      };
+    }
+
+    // 3. Give ONLY retrieved courses to Groq
+    const availableCourses = relevantCourses.map((item) => ({
+      id: item.course!.id,
+      title: item.course!.title,
+      description: item.course!.description,
+      level: item.course!.level,
+      goals: item.course!.goals,
+      similarityScore: item.similarityScore,
+    }));
+
     const prompt = `
 You are an educational course recommendation assistant.
 
-The available courses are:
-1. Basic Programming
-2. Data Structures & Algorithms
-3. Frontend Development
-4. Backend Development
-
 Student information:
+
 Learning goal: ${learningGoal}
 Skill level: ${skillLevel}
 Interests: ${interests}
 
-Recommend the most relevant courses from ONLY the available courses.
+The following courses were found to be semantically relevant to the student's goal:
+
+${JSON.stringify(availableCourses, null, 2)}
+
+Your task is to select and organize the most relevant courses for this student.
+
+Rules:
+1. Recommend ONLY courses from the provided list.
+2. NEVER invent a course.
+3. Do not recommend a course simply because it is generally useful.
+4. Consider the student's learning goal, skill level, and interests.
+5. Arrange the selected courses in a sensible learning order.
+6. If none of the provided courses are genuinely relevant, return an empty recommendations array.
+7. Use the exact course ID and title provided.
 
 Return ONLY valid JSON in this format:
+
 {
   "recommendations": [
     {
+      "courseId": "course-id",
       "courseTitle": "Course Name",
       "reason": "Short reason"
     }
   ]
 }
-
-Do not recommend courses that are not in the available course list.
 `;
 
-    const response = await groq.chat.completions.create({
+    const completion = await groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.2,
       response_format: {
-        type: "json_object"
-      }
+        type: "json_object",
+      },
     });
 
-    const content = response.choices[0]?.message?.content;
+    const content = completion.choices[0]?.message?.content;
 
-    if (content) {
-      return parseJsonResponse(content);
+    if (!content) {
+      throw new Error("Groq returned an empty response");
     }
-  } catch (err) {
-    console.warn("Groq AI recommendation failed, using fallback:", err);
-  }
 
-  // Smart Fallback based on user profile
-  const goalLower = (learningGoal + " " + interests).toLowerCase();
-  const recs = [];
-
-  if (goalLower.includes("frontend") || goalLower.includes("react") || goalLower.includes("web") || goalLower.includes("javascript")) {
-    recs.push({
-      courseTitle: "Frontend Development",
-      reason: "Matches your goal to learn web interfaces, React, and JavaScript."
-    });
+    return JSON.parse(content);
+  } catch (error) {
+    console.error("Course recommendation error:", error);
+    throw error;
   }
-  if (goalLower.includes("backend") || goalLower.includes("node") || goalLower.includes("database") || goalLower.includes("api")) {
-    recs.push({
-      courseTitle: "Backend Development",
-      reason: "Great match for building APIs, server logic, and managing databases."
-    });
-  }
-  if (goalLower.includes("dsa") || goalLower.includes("algorithm") || goalLower.includes("problem") || skillLevel === "Intermediate" || skillLevel === "Advanced") {
-    recs.push({
-      courseTitle: "Data Structures & Algorithms",
-      reason: "Recommended to strengthen core problem-solving and computer science fundamentals."
-    });
-  }
-
-  if (recs.length === 0) {
-    recs.push({
-      courseTitle: "Basic Programming",
-      reason: "Ideal starting point to build a strong foundation in programming concepts."
-    });
-    recs.push({
-      courseTitle: "Frontend Development",
-      reason: "Popular track for building interactive web applications."
-    });
-  }
-
-  return { recommendations: recs };
 }
 
 export async function recommendNextAction(

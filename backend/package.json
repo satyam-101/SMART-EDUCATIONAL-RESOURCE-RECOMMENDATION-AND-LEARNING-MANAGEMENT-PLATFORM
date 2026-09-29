@@ -36,6 +36,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.30",
+    "@pinecone-database/pinecone": "^9.0.0",
     "@prisma/client": "^6.2.1",
     "@types/cors": "^2.8.19",
     "bcrypt": "^6.0.0",
