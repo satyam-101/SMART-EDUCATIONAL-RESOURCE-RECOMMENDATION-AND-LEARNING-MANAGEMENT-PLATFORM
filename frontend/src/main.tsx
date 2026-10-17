@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { UIProvider } from './context/UIContext';
+import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
 window.addEventListener('error', (event) => {
@@ -22,7 +23,9 @@ createRoot(document.getElementById('root')!).render(
         <ThemeProvider>
           <UIProvider>
             <AuthProvider>
-              <App />
+              <ToastProvider>
+                <App />
+              </ToastProvider>
             </AuthProvider>
           </UIProvider>
         </ThemeProvider>

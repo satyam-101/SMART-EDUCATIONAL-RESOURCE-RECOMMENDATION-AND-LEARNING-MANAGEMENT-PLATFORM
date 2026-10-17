@@ -24,6 +24,18 @@ export const removeToken = (): void => {
   localStorage.removeItem('zuno.token');
 };
 
+export class ApiError extends Error {
+  status: number;
+  data?: any;
+
+  constructor(message: string, status: number, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -35,15 +47,48 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (netErr: any) {
+    // Network failure, offline, or CORS failure
+    throw new ApiError(
+      'Unable to connect to the server. Please check your internet connection or verify the server is running.',
+      0
+    );
+  }
 
-  const data = await response.json().catch(() => ({}));
+  let data: any = {};
+  try {
+    const text = await response.text();
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || `Request failed with status ${response.status}`);
+    // Session expired or invalid token
+    if (response.status === 401 && !endpoint.includes('/api/auth/')) {
+      removeToken();
+      const authMsg = data.message || data.error || 'Your session has expired. Please sign in again.';
+      throw new ApiError(authMsg, 401, data);
+    }
+
+    // Validation / user-facing errors
+    const errorMsg =
+      data.message ||
+      data.error ||
+      (Array.isArray(data.errors) ? data.errors.join(', ') : null) ||
+      (response.status === 404
+        ? 'The requested resource was not found.'
+        : response.status >= 500
+        ? 'A server error occurred. Please try again later.'
+        : `Request failed with status ${response.status}`);
+
+    throw new ApiError(errorMsg, response.status, data);
   }
 
   return data as T;
@@ -146,6 +191,23 @@ export const api = {
     recentAttempts: any[];
   }> {
     return request<{ user: User; progress: any[]; recentAttempts: any[] }>('/api/dashboard');
+  },
+
+  // 10. Profile
+  async getProfile(): Promise<{ user: User }> {
+    return request<{ user: User }>('/api/profile');
+  },
+
+  // 11. AI Tutor
+  async askAiTutor(data: {
+    question: string;
+    topic?: string;
+    history?: Array<{ role: string; content: string }>;
+  }): Promise<{ answer: string }> {
+    return request<{ answer: string }>('/api/ai-tutor', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 

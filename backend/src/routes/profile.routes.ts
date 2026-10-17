@@ -1,10 +1,10 @@
 import { Router } from "express";
 import prisma from "../lib/prisma";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, AuthRequest } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", authenticate, async (req, res) => {
+router.get("/", authenticate, async (req:AuthRequest, res) => {
   try {
     const userId = req.userId!;
 

@@ -5,6 +5,7 @@ import { Logo } from '../ui/Logo';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { cn } from '../../lib/utils';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useAuth } from '../../hooks/useAuth';
 
 const LINKS = [
   { label: 'Courses', target: '#courses' },
@@ -22,6 +23,7 @@ export function CreativeHeader() {
   const [hovering, setHovering] = useState<string | null>(null);
   const reduced = useReducedMotion();
   const { pathname } = useLocation();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     let raf = 0;
@@ -81,18 +83,29 @@ export function CreativeHeader() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link
-            to="/login"
-            className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
-          >
-            Get started
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/dashboard"
+              className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+            >
+              Dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="rounded-xl px-3 py-2 text-sm font-semibold text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-transform duration-300 hover:scale-[1.03] active:scale-[0.97]"
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
 
         {pathname === '/' && !reduced && (

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Send, X, Sparkles, Lightbulb, ListChecks, Hammer, FileText, BookOpen } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { duration, ease, spring } from '../../config/motionConfig';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { cn } from '../../lib/utils';
+import api from '../../api';
 
 const SUGGESTED = [
   { label: 'Explain this simply', Icon: Lightbulb },
@@ -13,14 +16,9 @@ const SUGGESTED = [
   { label: 'Give me an example', Icon: BookOpen },
 ];
 
-const SEED_REPLY =
-  'I want to make that crystal clear. Think of a concept like a map: you can memorize the roads, or you can understand the terrain. As your ZUNO tutor, let’s build from where you are — want me to explain it simply, quiz you, or turn it into a mini project?';
+const MAX_HISTORY = 20;
 
-const TIMING = [
-  'Taking in your question…',
-  'Turning it into a path…',
-  'Finding the simplest explanation…',
-];
+type ChatMsg = { from: 'ai' | 'user'; text: string };
 
 /**
  * The AI Orb + dock. The floating orb has a distinct motion identity; on click
@@ -30,33 +28,51 @@ const TIMING = [
 export function AITutorDock() {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Array<{ from: 'ai' | 'user'; text: string }>>([]);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
-  const [thinkingStep, setThinkingStep] = useState(-1);
-  const [done, setDone] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const reply = useRef(SEED_REPLY);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!done || messages.length === 0) return;
-    panelRef.current?.scrollTo({ top: panelRef.current.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
-  }, [messages, done, reduced]);
+    if (messages.length === 0) return;
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
+  }, [messages, loading, reduced]);
 
-  function ask(text: string) {
-    if (!text.trim() || !done) return;
-    setMessages((m) => [...m, { from: 'user', text }]);
-    setDone(false);
-    setThinkingStep(0);
-    reply.current = SEED_REPLY;
+  async function ask(text: string, isRetry = false) {
+    if (!text.trim() || loading) return;
+    setError(null);
+    setLastQuestion(text.trim());
 
-    TIMING.forEach((_, i) => {
-      window.setTimeout(() => setThinkingStep(i), i * 560);
-    });
-    window.setTimeout(() => {
-      setMessages((m) => [...m, { from: 'ai', text: reply.current }]);
-      setThinkingStep(-1);
-      setDone(true);
-    }, TIMING.length * 560 + 320);
+    if (!isRetry) {
+      const userMsg: ChatMsg = { from: 'user', text };
+      setMessages((m) => [...m, userMsg]);
+    }
+    setInput('');
+    setLoading(true);
+
+    // Build history from recent messages
+    const recentMessages = messages.slice(-MAX_HISTORY);
+    const history = recentMessages.map((m) => ({
+      role: m.from === 'user' ? 'user' : 'assistant',
+      content: m.text,
+    }));
+
+    try {
+      const res = await api.askAiTutor({
+        question: text.trim(),
+        history,
+      });
+
+      setMessages((m) => [...m, { from: 'ai', text: res.answer }]);
+      setLastQuestion(null);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to get a response.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -116,7 +132,7 @@ export function AITutorDock() {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                 {messages.map((m, i) => (
                   <motion.div
                     key={i}
@@ -125,26 +141,87 @@ export function AITutorDock() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: duration.normal, ease: ease.out }}
                   >
-                    <div className={cn('max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed', m.from === 'user' ? 'rounded-br-md bg-violet-600 text-[#fff]' : 'rounded-bl-md border border-white/[0.08] bg-white/[0.05] text-zinc-200')}>
-                      {m.text}
+                    <div
+                      className={cn(
+                        'max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed',
+                        m.from === 'user'
+                          ? 'rounded-br-md bg-violet-600 text-white'
+                          : 'rounded-bl-md border border-white/[0.08] bg-white/[0.05] text-zinc-200'
+                      )}
+                    >
+                      {m.from === 'user' ? (
+                        <p className="whitespace-pre-wrap">{m.text}</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              h1: ({ node, ...props }) => <h1 className="text-xs font-bold text-zinc-100 mt-2 mb-1" {...props} />,
+                              h2: ({ node, ...props }) => <h2 className="text-xs font-bold text-violet-300 mt-2 mb-1" {...props} />,
+                              h3: ({ node, ...props }) => <h3 className="text-xs font-semibold text-zinc-200 mt-1.5 mb-0.5" {...props} />,
+                              p: ({ node, ...props }) => <p className="mb-1.5 last:mb-0 leading-relaxed text-zinc-300" {...props} />,
+                              ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-1.5 space-y-0.5 text-zinc-300" {...props} />,
+                              ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-1.5 space-y-0.5 text-zinc-300" {...props} />,
+                              li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+                              strong: ({ node, ...props }) => <strong className="font-semibold text-zinc-100" {...props} />,
+                              code: ({ node, className, children, ...props }: any) => {
+                                const isInline = !className && !String(children).includes('\n');
+                                return isInline ? (
+                                  <code className="rounded bg-black/40 px-1 py-0.5 font-mono text-[11px] text-violet-300" {...props}>
+                                    {children}
+                                  </code>
+                                ) : (
+                                  <pre className="my-1.5 overflow-x-auto rounded-lg border border-white/10 bg-black/50 p-2 font-mono text-[11px] text-zinc-200">
+                                    <code {...props}>{children}</code>
+                                  </pre>
+                                );
+                              },
+                            }}
+                          >
+                            {m.text}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
 
-                {!done && (
+                {/* Loading indicator */}
+                {loading && (
                   <motion.div className="flex justify-start" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <div className="rounded-2xl rounded-bl-md border border-white/[0.08] bg-white/[0.05] px-4 py-3">
-                      {thinkingStep >= 0 ? (
-                        <motion.p key={thinkingStep} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-zinc-400">
-                          {TIMING[thinkingStep]}
-                        </motion.p>
-                      ) : (
-                        <span className="flex gap-1.5 py-1">
-                          {[0, 1, 2].map((d) => (
-                            <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-violet-300" animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4] }} transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.16 }} />
-                          ))}
-                        </span>
-                      )}
+                      <span className="flex gap-1.5 py-1">
+                        {[0, 1, 2].map((d) => (
+                          <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-violet-300" animate={{ y: [0, -5, 0], opacity: [0.4, 1, 0.4] }} transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.16 }} />
+                        ))}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Error message with retry */}
+                {error && (
+                  <motion.div className="flex justify-start" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs text-red-300 space-y-1.5">
+                      <p>{error}</p>
+                      <div className="flex items-center gap-3 pt-1">
+                        {lastQuestion && (
+                          <button
+                            type="button"
+                            onClick={() => ask(lastQuestion, true)}
+                            className="font-semibold text-violet-300 hover:text-white underline cursor-pointer"
+                          >
+                            Retry Question
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setError(null)}
+                          className="text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -159,7 +236,8 @@ export function AITutorDock() {
                         key={label}
                         type="button"
                         onClick={() => ask(label)}
-                        className="flex items-center gap-1.5 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-3 py-2 text-xs font-semibold text-violet-200 transition-colors hover:border-violet-300/40 hover:bg-violet-500/[0.16]"
+                        disabled={loading}
+                        className="flex items-center gap-1.5 rounded-xl border border-violet-400/20 bg-violet-500/[0.08] px-3 py-2 text-xs font-semibold text-violet-200 transition-colors hover:border-violet-300/40 hover:bg-violet-500/[0.16] disabled:opacity-40"
                         initial={reduced ? false : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 + i * 0.06, duration: duration.normal, ease: ease.out }}
@@ -178,7 +256,6 @@ export function AITutorDock() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   ask(input);
-                  setInput('');
                 }}
               >
                 <input
@@ -186,12 +263,13 @@ export function AITutorDock() {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about any concept…"
                   aria-label="Ask ZUNO AI"
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-violet-400/40"
+                  disabled={loading}
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-violet-400/40 disabled:opacity-50"
                 />
                 <button
                   type="submit"
                   aria-label="Send message"
-                  disabled={!input.trim() || !done}
+                  disabled={!input.trim() || loading}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet-600 text-white transition-transform active:scale-95 disabled:opacity-40"
                 >
                   <Send className="h-4 w-4" />

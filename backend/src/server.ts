@@ -10,6 +10,8 @@ import progressRoutes from './routes/progress.routes';
 import recommendationRoutes from './routes/recommendation.routes';
 import performanceRoutes from './routes/performance.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import aiTutorRoutes from "./routes/ai-tutor.routes";
+import profileRoutes from "./routes/profile.routes";
 
 import "dotenv/config";
 
@@ -39,6 +41,8 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/performance", performanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/ai-tutor", aiTutorRoutes);
+app.use("/api/profile", profileRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

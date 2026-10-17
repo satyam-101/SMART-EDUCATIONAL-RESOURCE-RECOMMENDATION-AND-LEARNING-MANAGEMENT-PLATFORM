@@ -29,8 +29,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (dash && dash.user) {
             setUser(dash.user);
           }
-        } catch (err) {
-          console.warn('Session expired or server unavailable', err);
+        } catch (err: any) {
+          console.warn('Session check failed:', err);
+          // If server rejects token (e.g. 401 Unauthorized), remove invalid token & reset user
+          if (err?.message?.includes('401') || err?.message?.toLowerCase()?.includes('token') || err?.message?.toLowerCase()?.includes('auth')) {
+            removeToken();
+            setUser(null);
+          }
         }
       }
       setLoading(false);

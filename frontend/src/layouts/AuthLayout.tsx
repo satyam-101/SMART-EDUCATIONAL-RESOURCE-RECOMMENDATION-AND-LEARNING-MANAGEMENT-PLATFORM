@@ -1,7 +1,22 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Navigate, Outlet } from 'react-router-dom';
 import { Logo } from '../components/ui/Logo';
+import { useAuth } from '../hooks/useAuth';
 
 export function AuthLayout() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-5 py-12">
       <div className="w-full max-w-sm">
