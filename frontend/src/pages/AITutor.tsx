@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/Button';
 import { SentIcon, SparklesIcon, RefreshCwIcon } from '../components/icons';
