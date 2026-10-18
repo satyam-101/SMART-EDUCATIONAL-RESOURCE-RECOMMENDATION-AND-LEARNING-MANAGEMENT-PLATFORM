@@ -4,8 +4,8 @@ import remarkGfm from 'remark-gfm';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/Button';
-import { SentIcon, SparklesIcon, BookmarkIcon, RefreshCwIcon } from '../components/icons';
-import { mockAIPrompts } from '../data';
+import { SentIcon, SparklesIcon, RefreshCwIcon } from '../components/icons';
+
 import api from '../api';
 
 type Msg = {
@@ -60,15 +60,10 @@ export function AITutor() {
     },
   ]);
   const [input, setInput] = useState('');
-  const [query, setQuery] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
-  const [saved, setSaved] = useLocalStorage<string[]>('zuno:aiSaves', []);
   const bottomRef = useRef<HTMLDivElement | null>(null);
-
-  const prompts = mockAIPrompts
-    .filter((prompt) => !query || prompt.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 6);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,12 +120,6 @@ export function AITutor() {
     // Remove the error message before retrying
     setMessages((prev) => prev.filter((m) => !m.isError));
     send(failedQuestion);
-  };
-
-  const toggleSaved = (prompt: string) => {
-    setSaved((current) =>
-      current.includes(prompt) ? current.filter((item) => item !== prompt) : [...current, prompt]
-    );
   };
 
   return (
