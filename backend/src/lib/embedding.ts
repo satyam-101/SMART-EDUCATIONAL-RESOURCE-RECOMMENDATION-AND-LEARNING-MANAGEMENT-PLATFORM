@@ -1,21 +1,37 @@
-import { HfInference } from "@huggingface/inference";
-import dotenv from "dotenv";
 
-dotenv.config();
+import { pipeline } from "@huggingface/transformers";
+import type { FeatureExtractionPipeline } from "@huggingface/transformers";
 
-const hf = new HfInference(process.env.HF_TOKEN);
+let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 
-export const generateEmbedding = async (text: string): Promise<number[]> => {
-  const result = await hf.featureExtraction({
-    model: process.env.HF_EMBEDDING_MODEL as string,
-    inputs: text,
-    provider: "hf-inference",
+async function getExtractor(): Promise<FeatureExtractionPipeline> {
+  if (!extractorPromise) {
+    extractorPromise = pipeline(
+      "feature-extraction",
+      "Xenova/bge-large-en-v1.5"
+    ) as Promise<FeatureExtractionPipeline>;
+  }
+
+  return extractorPromise;
+}
+
+export const generateEmbedding = async (
+  text: string
+): Promise<number[]> => {
+  const extractor = await getExtractor();
+  
+  const result = await extractor(text, {
+    pooling: "mean",
+    normalize: true,
   });
 
-  const embedding = result as number[];
+  const embedding = Array.from(result.data as Float32Array);
+  // console.log(embedding);
 
-  if (!Array.isArray(embedding)) {
-    throw new Error("Invalid embedding response");
+  if (embedding.length !== 1024) {
+    throw new Error(
+      `Invalid embedding dimensions: ${embedding.length}`
+    );
   }
 
   return embedding;
